@@ -101,100 +101,71 @@ proxy-providers:
       interval: 300
 
 proxy-groups:
+  # 主入口：选择自动、手动或测速最快
   - name: 节点选择
     type: select
     proxies:
       - 自动选择
-      - 香港节点
-      - 台湾节点
-      - 日本节点
-      - 新加坡节点
-      - 美国节点
-      - 其他节点
+      - 手动选择
+      - 自动最快
       - DIRECT
 
+  # 自动容错：优先使用列表中第一个可用节点，失效时自动切换
   - name: 自动选择
-    type: url-test
+    type: fallback
     use: [airport_a, airport_b, airport_c]
     url: https://www.gstatic.com/generate_204
     interval: 300
-    tolerance: 80
 
-  - name: 香港节点
-    type: url-test
-    use: [airport_a, airport_b, airport_c]
-    filter: "(?i)香港|港|HK|Hong[ -]?Kong"
-    url: https://www.gstatic.com/generate_204
-    interval: 300
-    tolerance: 80
-
-  - name: 台湾节点
-    type: url-test
-    use: [airport_a, airport_b, airport_c]
-    filter: "(?i)台湾|台|TW|Taiwan"
-    url: https://www.gstatic.com/generate_204
-    interval: 300
-    tolerance: 80
-
-  - name: 日本节点
-    type: url-test
-    use: [airport_a, airport_b, airport_c]
-    filter: "(?i)日本|日|JP|Japan|Tokyo|Osaka"
-    url: https://www.gstatic.com/generate_204
-    interval: 300
-    tolerance: 80
-
-  - name: 新加坡节点
-    type: url-test
-    use: [airport_a, airport_b, airport_c]
-    filter: "(?i)新加坡|狮城|SG|Singapore"
-    url: https://www.gstatic.com/generate_204
-    interval: 300
-    tolerance: 80
-
-  - name: 美国节点
-    type: url-test
-    use: [airport_a, airport_b, airport_c]
-    filter: "(?i)美国|美|US|United[ -]?States|Los[ -]?Angeles|San[ -]?Jose"
-    url: https://www.gstatic.com/generate_204
-    interval: 300
-    tolerance: 80
-
-  - name: 其他节点
+  # 手动模式：展示全部机场的全部节点
+  - name: 手动选择
     type: select
     use: [airport_a, airport_b, airport_c]
+
+  # 最快模式：周期测速并选择当前延迟最低的节点
+  - name: 自动最快
+    type: url-test
+    use: [airport_a, airport_b, airport_c]
+    url: https://www.gstatic.com/generate_204
+    interval: 300
+    tolerance: 50
 
   - name: AI服务
     type: select
-    proxies: [美国节点, 日本节点, 新加坡节点, 节点选择]
+    proxies: [节点选择, 自动最快, 手动选择]
 
   - name: 电报消息
     type: select
-    proxies: [新加坡节点, 香港节点, 节点选择]
+    proxies: [节点选择, 自动最快, 手动选择]
 
   - name: 油管视频
     type: select
-    proxies: [自动选择, 香港节点, 日本节点, 新加坡节点, 节点选择]
+    proxies: [节点选择, 自动最快, 手动选择]
 
   - name: 奈飞视频
     type: select
-    proxies: [自动选择, 新加坡节点, 日本节点, 香港节点, 节点选择]
+    proxies: [节点选择, 自动最快, 手动选择]
 
   - name: GitHub
     type: select
-    proxies: [节点选择, 自动选择, DIRECT]
+    proxies: [节点选择, 自动最快, 手动选择, DIRECT]
 
   - name: 微软服务
     type: select
-    proxies: [DIRECT, 节点选择, 自动选择]
+    proxies: [DIRECT, 节点选择, 自动最快, 手动选择]
 
   - name: 苹果服务
     type: select
-    proxies: [DIRECT, 节点选择, 自动选择]
+    proxies: [DIRECT, 节点选择, 自动最快, 手动选择]
+
+  # 供你以后追加需要走代理的域名/IP规则
+  - name: 杂项
+    type: select
+    proxies: [节点选择, 自动最快, 手动选择, DIRECT]
 
   - name: 漏网之鱼
     type: select
-    proxies: [节点选择, 自动选择, DIRECT]
+    proxies: [节点选择, 自动最快, 手动选择, DIRECT]
 
 rule-providers:
   private:
@@ -282,9 +253,17 @@ rule-providers:
     url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/apple.mrs
     interval: 86400
 
+  # 自定义杂项规则：把 example.invalid 替换掉，或继续追加 payload
+  misc:
+    type: inline
+    behavior: classical
+    payload:
+      - DOMAIN-SUFFIX,example.invalid
+
 rules:
   - RULE-SET,private,DIRECT
   - RULE-SET,ads,REJECT
+  - RULE-SET,misc,杂项
   - RULE-SET,openai,AI服务
   - RULE-SET,telegram,电报消息
   - RULE-SET,youtube,油管视频
