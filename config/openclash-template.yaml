@@ -1,0 +1,299 @@
+# OpenClash / Mihomo multi-subscription template
+# Replace subscription placeholders only in a local copy.
+# Do not commit real subscription URLs.
+
+mixed-port: 7890
+redir-port: 7892
+tproxy-port: 7895
+allow-lan: true
+mode: rule
+log-level: warning
+ipv6: false
+unified-delay: true
+tcp-concurrent: true
+find-process-mode: strict
+global-client-fingerprint: chrome
+
+profile:
+  store-selected: true
+  store-fake-ip: true
+
+sniffer:
+  enable: true
+  sniff:
+    HTTP:
+      ports: [80, 8080-8880]
+      override-destination: true
+    TLS:
+      ports: [443, 8443]
+    QUIC:
+      ports: [443, 8443]
+  skip-domain:
+    - Mijia Cloud
+    - +.push.apple.com
+
+tun:
+  enable: true
+  stack: mixed
+  dns-hijack:
+    - any:53
+    - tcp://any:53
+  auto-route: true
+  auto-redirect: true
+  auto-detect-interface: true
+
+dns:
+  enable: true
+  ipv6: false
+  enhanced-mode: fake-ip
+  fake-ip-range: 198.18.0.1/16
+  fake-ip-filter:
+    - "*.lan"
+    - "*.local"
+    - localhost.ptlogin2.qq.com
+    - +.stun.*.*
+    - +.stun.*.*.*
+    - +.stun.*.*.*.*
+  default-nameserver:
+    - 223.5.5.5
+    - 119.29.29.29
+  nameserver:
+    - https://dns.alidns.com/dns-query
+    - https://doh.pub/dns-query
+  proxy-server-nameserver:
+    - https://dns.alidns.com/dns-query
+    - https://doh.pub/dns-query
+  nameserver-policy:
+    "geosite:cn,private":
+      - https://dns.alidns.com/dns-query
+      - https://doh.pub/dns-query
+    "geosite:geolocation-!cn":
+      - https://1.1.1.1/dns-query
+      - https://dns.google/dns-query
+
+proxy-providers:
+  airport_a:
+    type: http
+    url: "SUBSCRIPTION_URL_A"
+    path: ./providers/airport_a.yaml
+    interval: 21600
+    health-check:
+      enable: true
+      url: https://www.gstatic.com/generate_204
+      interval: 300
+  airport_b:
+    type: http
+    url: "SUBSCRIPTION_URL_B"
+    path: ./providers/airport_b.yaml
+    interval: 21600
+    health-check:
+      enable: true
+      url: https://www.gstatic.com/generate_204
+      interval: 300
+  airport_c:
+    type: http
+    url: "SUBSCRIPTION_URL_C"
+    path: ./providers/airport_c.yaml
+    interval: 21600
+    health-check:
+      enable: true
+      url: https://www.gstatic.com/generate_204
+      interval: 300
+
+proxy-groups:
+  - name: 节点选择
+    type: select
+    proxies:
+      - 自动选择
+      - 香港节点
+      - 台湾节点
+      - 日本节点
+      - 新加坡节点
+      - 美国节点
+      - 其他节点
+      - DIRECT
+
+  - name: 自动选择
+    type: url-test
+    use: [airport_a, airport_b, airport_c]
+    url: https://www.gstatic.com/generate_204
+    interval: 300
+    tolerance: 80
+
+  - name: 香港节点
+    type: url-test
+    use: [airport_a, airport_b, airport_c]
+    filter: "(?i)香港|港|HK|Hong[ -]?Kong"
+    url: https://www.gstatic.com/generate_204
+    interval: 300
+    tolerance: 80
+
+  - name: 台湾节点
+    type: url-test
+    use: [airport_a, airport_b, airport_c]
+    filter: "(?i)台湾|台|TW|Taiwan"
+    url: https://www.gstatic.com/generate_204
+    interval: 300
+    tolerance: 80
+
+  - name: 日本节点
+    type: url-test
+    use: [airport_a, airport_b, airport_c]
+    filter: "(?i)日本|日|JP|Japan|Tokyo|Osaka"
+    url: https://www.gstatic.com/generate_204
+    interval: 300
+    tolerance: 80
+
+  - name: 新加坡节点
+    type: url-test
+    use: [airport_a, airport_b, airport_c]
+    filter: "(?i)新加坡|狮城|SG|Singapore"
+    url: https://www.gstatic.com/generate_204
+    interval: 300
+    tolerance: 80
+
+  - name: 美国节点
+    type: url-test
+    use: [airport_a, airport_b, airport_c]
+    filter: "(?i)美国|美|US|United[ -]?States|Los[ -]?Angeles|San[ -]?Jose"
+    url: https://www.gstatic.com/generate_204
+    interval: 300
+    tolerance: 80
+
+  - name: 其他节点
+    type: select
+    use: [airport_a, airport_b, airport_c]
+
+  - name: AI服务
+    type: select
+    proxies: [美国节点, 日本节点, 新加坡节点, 节点选择]
+
+  - name: 电报消息
+    type: select
+    proxies: [新加坡节点, 香港节点, 节点选择]
+
+  - name: 油管视频
+    type: select
+    proxies: [自动选择, 香港节点, 日本节点, 新加坡节点, 节点选择]
+
+  - name: 奈飞视频
+    type: select
+    proxies: [自动选择, 新加坡节点, 日本节点, 香港节点, 节点选择]
+
+  - name: GitHub
+    type: select
+    proxies: [节点选择, 自动选择, DIRECT]
+
+  - name: 微软服务
+    type: select
+    proxies: [DIRECT, 节点选择, 自动选择]
+
+  - name: 苹果服务
+    type: select
+    proxies: [DIRECT, 节点选择, 自动选择]
+
+  - name: 漏网之鱼
+    type: select
+    proxies: [节点选择, 自动选择, DIRECT]
+
+rule-providers:
+  private:
+    type: http
+    behavior: domain
+    format: mrs
+    path: ./rules/private.mrs
+    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/private.mrs
+    interval: 86400
+  ads:
+    type: http
+    behavior: domain
+    format: mrs
+    path: ./rules/ads.mrs
+    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/category-ads-all.mrs
+    interval: 86400
+  cn:
+    type: http
+    behavior: domain
+    format: mrs
+    path: ./rules/cn.mrs
+    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/cn.mrs
+    interval: 86400
+  cn-ip:
+    type: http
+    behavior: ipcidr
+    format: mrs
+    path: ./rules/cn-ip.mrs
+    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/cn.mrs
+    interval: 86400
+  proxy:
+    type: http
+    behavior: domain
+    format: mrs
+    path: ./rules/proxy.mrs
+    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/proxy.mrs
+    interval: 86400
+  openai:
+    type: http
+    behavior: domain
+    format: mrs
+    path: ./rules/openai.mrs
+    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/openai.mrs
+    interval: 86400
+  telegram:
+    type: http
+    behavior: domain
+    format: mrs
+    path: ./rules/telegram.mrs
+    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/telegram.mrs
+    interval: 86400
+  youtube:
+    type: http
+    behavior: domain
+    format: mrs
+    path: ./rules/youtube.mrs
+    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/youtube.mrs
+    interval: 86400
+  netflix:
+    type: http
+    behavior: domain
+    format: mrs
+    path: ./rules/netflix.mrs
+    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/netflix.mrs
+    interval: 86400
+  github:
+    type: http
+    behavior: domain
+    format: mrs
+    path: ./rules/github.mrs
+    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/github.mrs
+    interval: 86400
+  microsoft:
+    type: http
+    behavior: domain
+    format: mrs
+    path: ./rules/microsoft.mrs
+    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/microsoft.mrs
+    interval: 86400
+  apple:
+    type: http
+    behavior: domain
+    format: mrs
+    path: ./rules/apple.mrs
+    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/apple.mrs
+    interval: 86400
+
+rules:
+  - RULE-SET,private,DIRECT
+  - RULE-SET,ads,REJECT
+  - RULE-SET,openai,AI服务
+  - RULE-SET,telegram,电报消息
+  - RULE-SET,youtube,油管视频
+  - RULE-SET,netflix,奈飞视频
+  - RULE-SET,github,GitHub
+  - RULE-SET,microsoft,微软服务
+  - RULE-SET,apple,苹果服务
+  - RULE-SET,cn,DIRECT
+  - RULE-SET,cn-ip,DIRECT,no-resolve
+  - RULE-SET,proxy,节点选择
+  - GEOIP,CN,DIRECT,no-resolve
+  - MATCH,漏网之鱼
