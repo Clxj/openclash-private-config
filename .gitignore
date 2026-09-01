@@ -1,0 +1,6 @@
+# Never commit real subscription URLs or generated private profiles
+config/private*.yaml
+config/*secret*.yaml
+secrets/
+.env
+*.token
