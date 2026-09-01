@@ -158,6 +158,16 @@ proxy-groups:
     type: select
     proxies: [DIRECT, 节点选择, 自动最快, 手动选择]
 
+  # Steam 商店、社区、聊天等非下载流量固定走代理
+  - name: Steam平台
+    type: select
+    proxies: [节点选择, 自动最快, 手动选择]
+
+  # 游戏内容下载固定使用国内直连
+  - name: Steam下载
+    type: select
+    proxies: [DIRECT]
+
   # 供你以后追加需要走代理的域名/IP规则
   - name: 杂项
     type: select
@@ -253,6 +263,36 @@ rule-providers:
     url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/apple.mrs
     interval: 86400
 
+  # 自建的 Steam 游戏下载/CDN规则，必须排在完整 Steam 规则之前
+  steam-download:
+    type: inline
+    behavior: classical
+    payload:
+      - DOMAIN,dl.steam.clngaa.com
+      - DOMAIN,dl.steam.ksyna.com
+      - DOMAIN,st.dl.bscstorage.net
+      - DOMAIN,st.dl.eccdnx.com
+      - DOMAIN,st.dl.pinyuncloud.com
+      - DOMAIN,steampipe.steamcontent.tnkjmec.com
+      - DOMAIN-SUFFIX,cdn-ali.content.steamchina.com
+      - DOMAIN-SUFFIX,cdn-qc.content.steamchina.com
+      - DOMAIN-SUFFIX,cdn-ws.content.steamchina.com
+      - DOMAIN-SUFFIX,steamcontent.com
+      - DOMAIN-SUFFIX,steamcontent.tnkjmec.com
+      - DOMAIN-SUFFIX,steampipe.akamaized.net
+      - DOMAIN-SUFFIX,steampipe-partner.akamaized.net
+      - DOMAIN-SUFFIX,steampipe-kr.akamaized.net
+      - DOMAIN-SUFFIX,cm.steampowered.com
+
+  # 完整 Steam 平台规则；与下载规则重叠的域名会优先命中上面的直连规则
+  steam:
+    type: http
+    behavior: classical
+    format: yaml
+    path: ./rules/steam.yaml
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Steam/Steam.yaml
+    interval: 86400
+
   # 自定义杂项规则：把 example.invalid 替换掉，或继续追加 payload
   misc:
     type: inline
@@ -263,6 +303,8 @@ rule-providers:
 rules:
   - RULE-SET,private,DIRECT
   - RULE-SET,ads,REJECT
+  - RULE-SET,steam-download,Steam下载
+  - RULE-SET,steam,Steam平台
   - RULE-SET,misc,杂项
   - RULE-SET,openai,AI服务
   - RULE-SET,telegram,电报消息
