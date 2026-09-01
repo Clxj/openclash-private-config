@@ -1,0 +1,21 @@
+# Copy provider blocks into config/openclash-template.yaml.
+# Do not place real URLs in a committed file.
+
+proxy-providers:
+  airport_d:
+    type: http
+    url: "SUBSCRIPTION_URL_D"
+    path: ./providers/airport_d.yaml
+    interval: 21600
+    health-check:
+      enable: true
+      url: https://www.gstatic.com/generate_204
+      interval: 300
+
+# Then add airport_d to every policy group's use list:
+#
+# use:
+#   - airport_a
+#   - airport_b
+#   - airport_c
+#   - airport_d
